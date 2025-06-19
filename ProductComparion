@@ -1,0 +1,263 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import TrendAnalysis from './TrendAnalysis';
+import DemandForecast from './DemandForecast';
+
+const ProductComparison = () => {
+  const [sourceSystem1, setSourceSystem1] = useState('eon');
+  const [sourceSystem2, setSourceSystem2] = useState('sdp');
+  const [product1, setProduct1] = useState('');
+  const [product2, setProduct2] = useState('');
+  const [products1, setProducts1] = useState([]);
+  const [products2, setProducts2] = useState([]);
+  const [showComparison, setShowComparison] = useState(false);
+  const [loadingProducts1, setLoadingProducts1] = useState(false);
+  const [loadingProducts2, setLoadingProducts2] = useState(false);
+
+  const sourceSystems = ['eon', 'sdp', 'orion'];
+
+  // Fetch products for a given source system
+  const fetchProducts = async (sourceSystem, setProducts, setLoading) => {
+    setLoading(true);
+    try {
+      const response = await axios.post('http://localhost:5000/analysis/summary', {
+        source_system: sourceSystem,
+        analysis_type: 'trend_analysis'
+      });
+      const productList = response.data.map(item => item.product);
+      setProducts(productList);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch products when source systems change
+  useEffect(() => {
+    fetchProducts(sourceSystem1, setProducts1, setLoadingProducts1);
+  }, [sourceSystem1]);
+
+  useEffect(() => {
+    fetchProducts(sourceSystem2, setProducts2, setLoadingProducts2);
+  }, [sourceSystem2]);
+
+  const handleCompare = () => {
+    if (product1 && product2) {
+      setShowComparison(true);
+    } else {
+      alert("Please select products from both source systems.");
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8">🔄 Product Comparison Dashboard</h1>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {/* Source System 1 and Product Selection */}
+          <div className="bg-white p-6 rounded-lg border shadow-sm">
+            <h2 className="text-xl font-semibold mb-4 text-blue-600">📊 Source System 1</h2>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="source-system-1" className="block text-sm font-medium text-gray-700 mb-2">
+                  📡 Select Source System:
+                </label>
+                <select
+                  id="source-system-1"
+                  value={sourceSystem1}
+                  onChange={(e) => {
+                    setSourceSystem1(e.target.value);
+                    setProduct1(''); // Reset product when source system changes
+                  }}
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white"
+                >
+                  {sourceSystems.map((system) => (
+                    <option key={system} value={system}>{system.toUpperCase()}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  🔍 Select Product:
+                </label>
+                <Select value={product1} onValueChange={setProduct1} disabled={loadingProducts1}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={loadingProducts1 ? "Loading products..." : "Select product"} />
+                  </SelectTrigger>
+                  <SelectContent style={{ maxHeight: "250px", overflowY: "auto" }}>
+                    {products1.map((product) => (
+                      <SelectItem key={product} value={product}>
+                        {product}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {product1 && (
+                <div className="p-3 bg-blue-50 rounded-md border border-blue-200">
+                  <p className="text-sm font-medium text-blue-800">Selected: {product1}</p>
+                  <p className="text-xs text-blue-600">From: {sourceSystem1.toUpperCase()}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Source System 2 and Product Selection */}
+          <div className="bg-white p-6 rounded-lg border shadow-sm">
+            <h2 className="text-xl font-semibold mb-4 text-green-600">📈 Source System 2</h2>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="source-system-2" className="block text-sm font-medium text-gray-700 mb-2">
+                  📡 Select Source System:
+                </label>
+                <select
+                  id="source-system-2"
+                  value={sourceSystem2}
+                  onChange={(e) => {
+                    setSourceSystem2(e.target.value);
+                    setProduct2(''); // Reset product when source system changes
+                  }}
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 bg-white"
+                >
+                  {sourceSystems.map((system) => (
+                    <option key={system} value={system}>{system.toUpperCase()}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  🔍 Select Product:
+                </label>
+                <Select value={product2} onValueChange={setProduct2} disabled={loadingProducts2}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={loadingProducts2 ? "Loading products..." : "Select product"} />
+                  </SelectTrigger>
+                  <SelectContent style={{ maxHeight: "250px", overflowY: "auto" }}>
+                    {products2.map((product) => (
+                      <SelectItem key={product} value={product}>
+                        {product}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {product2 && (
+                <div className="p-3 bg-green-50 rounded-md border border-green-200">
+                  <p className="text-sm font-medium text-green-800">Selected: {product2}</p>
+                  <p className="text-xs text-green-600">From: {sourceSystem2.toUpperCase()}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="text-center mb-8">
+          <Button 
+            onClick={handleCompare} 
+            disabled={!product1 || !product2} 
+            className="px-8 py-3 text-lg font-semibold"
+            size="lg"
+          >
+            🔍 View Comparison
+          </Button>
+        </div>
+
+        {showComparison && (
+          <div className="space-y-8">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-2">📊 Comparison Results</h2>
+              <p className="text-muted-foreground">
+                Comparing <span className="font-semibold text-blue-600">{product1}</span> ({sourceSystem1.toUpperCase()}) 
+                vs <span className="font-semibold text-green-600">{product2}</span> ({sourceSystem2.toUpperCase()})
+              </p>
+            </div>
+
+            {/* Trend Analysis Comparison */}
+            <div>
+              <h3 className="text-xl font-semibold mb-4 text-center">📈 Trend Analysis Comparison</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <h4 className="text-lg font-semibold mb-3 text-blue-800">
+                    {product1} ({sourceSystem1.toUpperCase()})
+                  </h4>
+                  <div className="bg-white rounded-md overflow-hidden">
+                    <TrendAnalysis 
+                      sourceSystem={sourceSystem1} 
+                      selectedProduct={product1}
+                      isEmbedded={true}
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <h4 className="text-lg font-semibold mb-3 text-green-800">
+                    {product2} ({sourceSystem2.toUpperCase()})
+                  </h4>
+                  <div className="bg-white rounded-md overflow-hidden">
+                    <TrendAnalysis 
+                      sourceSystem={sourceSystem2} 
+                      selectedProduct={product2}
+                      isEmbedded={true}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Demand Forecast Comparison */}
+            <div>
+              <h3 className="text-xl font-semibold mb-4 text-center">🔮 Demand Forecast Comparison</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <h4 className="text-lg font-semibold mb-3 text-blue-800">
+                    {product1} ({sourceSystem1.toUpperCase()})
+                  </h4>
+                  <div className="bg-white rounded-md overflow-hidden">
+                    <DemandForecast 
+                      sourceSystem={sourceSystem1} 
+                      selectedProduct={product1}
+                      isEmbedded={true}
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <h4 className="text-lg font-semibold mb-3 text-green-800">
+                    {product2} ({sourceSystem2.toUpperCase()})
+                  </h4>
+                  <div className="bg-white rounded-md overflow-hidden">
+                    <DemandForecast 
+                      sourceSystem={sourceSystem2} 
+                      selectedProduct={product2}
+                      isEmbedded={true}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowComparison(false)}
+                className="px-6 py-2"
+              >
+                🔙 Back to Selection
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ProductComparison;
